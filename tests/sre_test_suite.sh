@@ -73,8 +73,16 @@ else
   fail "Prometheus UI internal check failed (HTTP $prom_code)"
 fi
 
-# Test internal Loki server (Loki itself is unexposed)
-loki_code=$(docker exec nginx curl -s -o /dev/null -w "%{http_code}" http://loki:3100/ready || echo "000")
+# Test internal Loki server
+loki_code="000"
+for attempt in 1 2 3; do
+  loki_code=$(docker exec nginx curl -s -o /dev/null -w "%{http_code}" http://loki:3100/ready || echo "000")
+  if [[ "$loki_code" == "200" ]]; then
+    break
+  fi
+  echo "  Waiting for Loki readiness (Attempt $attempt/3)..."
+  sleep 2
+done
 if [[ "$loki_code" == "200" ]]; then
   pass "Loki logs engine reachable inside internal network (HTTP 200)"
 else
@@ -120,6 +128,10 @@ else
   warn "No 429s observed — burst zone may have absorbed all requests"
 fi
 
+# Cooldown period to empty Nginx rate limit bucket before authentication checks
+echo "  Waiting 3s for rate limiting bucket cooldown..."
+sleep 3
+
 # ── 4. SECURITY & ISOLATION ──────────────────────────────────────────────────
 echo -e "\n\033[1m[4/5] SECURITY & ISOLATION\033[0m"
 
@@ -149,8 +161,8 @@ fi
 # 3. Port Isolation (None of the internal services should expose ports to the host)
 for port_name in "vLLM (8000)" "OpenWebUI (8088)" "Prometheus (9090)" "Grafana (3000)" "Loki (3100)" "Alertmanager (9093)"; do
   port=$(echo "$port_name" | grep -oE "[0-9]+")
-  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://localhost:$port/" 2>/dev/null || echo "000")
-  if [[ "$code" == "000" ]]; then
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://localhost:$port/" 2>/dev/null || true)
+  if [[ -z "$code" || "$code" == "000" ]]; then
     pass "Port isolation: $port_name not exposed directly to host"
   else
     fail "Security breach: $port_name reachable directly on host! (HTTP $code)"

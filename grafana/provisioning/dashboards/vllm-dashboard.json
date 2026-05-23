@@ -277,6 +277,9 @@
             "displayMode": "auto"
           }
         }
+      },
+      "options": {
+        "noDataText": "No active SRE alerts (All systems nominal)"
       }
     },
     {
@@ -284,9 +287,16 @@
       "title": "Correlated Container Logs (vLLM & NGINX)",
       "type": "logs",
       "gridPos": { "x": 12, "y": 48, "w": 12, "h": 8 },
-      "datasource": "Loki",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
       "targets": [
         {
+          "datasource": {
+            "type": "loki",
+            "uid": "Loki"
+          },
           "expr": "{job=\"container-logs\"}",
           "refId": "A"
         }

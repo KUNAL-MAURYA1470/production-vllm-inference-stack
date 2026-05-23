@@ -25,6 +25,7 @@ services:
     container_name: vllm
     restart: unless-stopped
     networks:
+      - public-net
       - backend-net
       - monitoring-net
     group_add:
@@ -73,6 +74,8 @@ services:
         condition: service_healthy
       openwebui:
         condition: service_started
+      grafana:
+        condition: service_started
     ports:
       - "8080:80"    # HTTP → redirects to HTTPS
       - "8443:443"   # HTTPS (hardened TLS Gateway)
@@ -84,6 +87,7 @@ services:
       - /var/cache/nginx
       - /var/run
       - /tmp
+      - /var/lib/nginx
 
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
@@ -138,7 +142,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=https://localhost:8443/grafana/
+      - GF_SERVER_ROOT_URL=https://${PUBLIC_IP_OR_DOMAIN:-localhost}:8443/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana_data:/var/lib/grafana
@@ -161,6 +165,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.2
     container_name: promtail
+    user: "0:0"
     restart: unless-stopped
     networks:
       - monitoring-net
