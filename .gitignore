@@ -1,0 +1,34 @@
+# API Secrets & Local Configurations
+.env
+.env.local
+.env.*.local
+
+# NGINX Certificates (Dynamic / Host-Specific)
+nginx/certs/
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python Cache & Compilation Outputs
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+
+# Operating System Metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+deployment-log.md
+instruction.txt
+instructions.txt

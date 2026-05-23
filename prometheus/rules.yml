@@ -1,0 +1,52 @@
+groups:
+  - name: llm-sre-alerts
+    rules:
+      # 1. Availability Rule
+      - alert: InstanceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "Service {{ $labels.job }} ({{ $labels.instance }}) has been offline for more than 30 seconds."
+
+      # 2. Latency SLO Rule (p95 latency > 30s)
+      - alert: vLLMInferenceLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(vllm:e2e_request_latency_seconds_bucket[5m])) by (le)) > 30
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P95 LLM Inference Latency"
+          description: "The 95th percentile of vLLM inference latency is {{ $value }}s, exceeding the 30s SLO threshold."
+
+      # 3. Saturation Rule: Queue Depth High
+      - alert: vLLMQueueDepthHigh
+        expr: vllm:num_requests_waiting > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "vLLM Scheduler Queue Depth High"
+          description: "vLLM scheduler has {{ $value }} requests waiting in the queue, indicating the engine is saturated."
+
+      # 4. Resource Rule: KV Cache Exhaustion
+      - alert: vLLMGPUCacheHigh
+        expr: vllm:kv_cache_usage_perc > 0.90
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "vLLM KV Cache Usage Critical"
+          description: "KV Cache utilization is at {{ $value | printf \"%.2f\" }}% (exceeding 90%), which may trigger sequence preemption."
+
+      # 5. Gateway Rule: NGINX High Rate Limit Actions
+      - alert: NGINXHighRate429
+        expr: sum(rate(nginx_http_requests_total{status="429"}[2m])) / sum(rate(nginx_http_requests_total[2m])) * 100 > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NGINX Rate Limiting Spike"
+          description: "More than 5% of client requests are being rate-limited (429) by NGINX (current rate: {{ $value | printf \"%.2f\" }}%)."
