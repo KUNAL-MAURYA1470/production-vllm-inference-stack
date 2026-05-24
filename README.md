@@ -3,6 +3,7 @@
 An end-to-end, enterprise-ready, and highly secure LLM inference stack using **vLLM (ROCm/MI300X)**, **NGINX (HTTPS TLS Gateway)**, **OpenWebUI**, **Prometheus**, **Alertmanager**, **Grafana Loki**, and **Grafana**.
 
 This project showcases SRE best practices, zero-trust network isolation, unified HTTPS proxying, API rate-limiting, custom JSON API errors, non-root/read-only container security, and log aggregation.
+<img width="2752" height="1536" alt="Hardened_Inference_Stack_Architecture" src="https://github.com/user-attachments/assets/f52a218a-c4b4-45c1-a0c4-71631e9bb664" />
 
 ---
 
